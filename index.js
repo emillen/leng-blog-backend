@@ -37,15 +37,14 @@ const startServer = db => {
   );
 };
 
+const createMongoUri = ({ username, password, host, port }) => {
+  return `mongodb://${
+    username && password ? `${username}:${password}@` : ""
+  }${host}:${port}`;
+};
+
 mongo
-  .connect(
-    `mongodb://${
-      mongodb.username && mongodb.password
-        ? `${mongodb.username}:${mongodb.password}@`
-        : ""
-    }${mongodb.host}:${mongodb.port}`,
-    { useNewUrlParser: true }
-  )
+  .connect(createMongoUri(mongodb), { useNewUrlParser: true })
   .then(db => db.db(mongodb.dbName))
   .then(startServer)
   .catch(console.error);
