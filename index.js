@@ -9,14 +9,15 @@ const handleErrors = ({ res, err }) => {
   res.status(500).send();
 };
 
+const has24Chars = s => s && s.length === 24;
+
 const startServer = db => {
   const app = express();
   app.use(bodyParser.json());
 
   app.get("/articles/:id", (req, res) => {
     console.log(req.params.id);
-    if (!req.params.id || req.params.id.length !== 24)
-      return res.status(404).send();
+    if (!has24Chars(req.params.id)) return res.status(404).send();
     db.collection("articles")
       .findOne({ _id: new ObjectID(req.params.id) })
       .then(article => {
@@ -28,6 +29,7 @@ const startServer = db => {
       .then(console.log)
       .catch(err => handleErrors({ res, err }));
   });
+
   app.get("/articles", (req, res) => {
     db.collection("articles")
       .find({})
@@ -51,6 +53,19 @@ const startServer = db => {
       })
       .then(console.log)
       .catch(err => handleErrors({ res, err }));
+  });
+
+  app.delete("/articles/:id", (req, res) => {
+    const id = req.params.id;
+    if (!id) return res.status(404).send();
+    db.collection("articles")
+      .deleteOne({ _id: new ObjectID(id) })
+      .then(obj => {
+        res.status(200).send(obj.result);
+        return obj.result;
+      })
+      .then(console.log)
+      .catch(console.error);
   });
 
   app.listen(serverConfig.port, () =>
