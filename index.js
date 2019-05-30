@@ -1,12 +1,33 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongo = require("mongodb").MongoClient;
+const ObjectID = require("mongodb").ObjectID;
 const { mongodb: mongoConfig, server: serverConfig } = require("./config.json");
+
+const handleErrors = ({ res, err }) => {
+  console.error(err);
+  res.status(500).send();
+};
 
 const startServer = db => {
   const app = express();
   app.use(bodyParser.json());
 
+  app.get("/articles/:id", (req, res) => {
+    console.log(req.params.id);
+    if (!req.params.id || req.params.id.length !== 24)
+      return res.status(404).send();
+    db.collection("articles")
+      .findOne({ _id: new ObjectID(req.params.id) })
+      .then(article => {
+        if (!article) res.status(404).send();
+        else res.status(200).send(article);
+
+        return article;
+      })
+      .then(console.log)
+      .catch(err => handleErrors({ res, err }));
+  });
   app.get("/articles", (req, res) => {
     db.collection("articles")
       .find({})
@@ -16,11 +37,11 @@ const startServer = db => {
         return articles;
       })
       .then(console.log)
-      .catch(_ => res.status(500).render());
+      .catch(err => handleErrors({ res, err }));
   });
 
   app.post("/articles", ({ body }, res) => {
-    if (!body.title || !body.markdown) return res.status(400).render();
+    if (!body.title || !body.markdown) return res.status(400).send();
     db.collection("articles")
       .insertOne({ markdown: body.markdown, title: body.title })
       .then(result => result.ops[0])
@@ -29,7 +50,7 @@ const startServer = db => {
         return data;
       })
       .then(console.log)
-      .catch(_ => res.status(500).render());
+      .catch(err => handleErrors({ res, err }));
   });
 
   app.listen(serverConfig.port, () =>
