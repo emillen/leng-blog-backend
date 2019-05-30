@@ -30,7 +30,7 @@ const startServer = db => {
       .catch(err => handleErrors({ res, err }));
   });
 
-  app.get("/articles", (req, res) => {
+  app.get("/articles", (_, res) => {
     db.collection("articles")
       .find({})
       .toArray()
@@ -65,7 +65,25 @@ const startServer = db => {
         return obj.result;
       })
       .then(console.log)
-      .catch(console.error);
+      .catch(err => handleErrors({ err, res }));
+  });
+
+  app.put("/articles/:id", (req, res) => {
+    const id = req.params.id;
+    const { title, markdown } = req.body;
+
+    if (!id) return res.status(404).send();
+    if (!title && !markdown) return res.status(400).send();
+
+    db.collection("articles")
+      .updateOne({ _id: new ObjectID(id) }, { $set: { title, markdown } }, {})
+      .then(doc => doc.result)
+      .then(result => {
+        res.status(200).send(result);
+        return result;
+      })
+      .then(console.log)
+      .catch(err => handleErrors({ err, res }));
   });
 
   app.listen(serverConfig.port, () =>
