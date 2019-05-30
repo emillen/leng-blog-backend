@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongo = require("mongodb").MongoClient;
-const { mongodb, server } = require("./config.json");
+const { mongodb: mongoConfig, server: serverConfig } = require("./config.json");
 
 const startServer = db => {
   const app = express();
@@ -32,8 +32,8 @@ const startServer = db => {
       .catch(_ => res.status(500).render());
   });
 
-  app.listen(server.port, () =>
-    console.log(`Running server on: http://localhost:${server.port}`)
+  app.listen(serverConfig.port, () =>
+    console.log(`Running server on: http://localhost:${serverConfig.port}`)
   );
 };
 
@@ -44,7 +44,7 @@ const createMongoUri = ({ username, password, host, port }) => {
 };
 
 mongo
-  .connect(createMongoUri(mongodb), { useNewUrlParser: true })
-  .then(db => db.db(mongodb.dbName))
+  .connect(createMongoUri(mongoConfig), { useNewUrlParser: true })
+  .then(db => db.db(mongoConfig.dbName))
   .then(startServer)
   .catch(console.error);
