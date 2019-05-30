@@ -1,6 +1,10 @@
 {
   "mongodb": {
-    "url": "mongodb://localhost:27017/exampledb"
+    "port": "27017",
+    "host": "localhost",
+    "dbName": "exampleDb",
+    "password": "",
+    "username": ""
   },
   "server": {
     "port": 3000
