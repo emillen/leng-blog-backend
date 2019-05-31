@@ -15,11 +15,10 @@ const startServer = db => {
   const app = express();
   app.use(bodyParser.json());
 
-  app.get("/articles/:id", (req, res) => {
-    console.log(req.params.id);
-    if (!has24Chars(req.params.id)) return res.status(404).send();
+  app.get("/articles/:id", ({ params: { id } }, res) => {
+    if (!has24Chars(id)) return res.status(404).send();
     db.collection("articles")
-      .findOne({ _id: new ObjectID(req.params.id) })
+      .findOne({ _id: new ObjectID(id) })
       .then(article => {
         if (!article) res.status(404).send();
         else res.status(200).send(article);
@@ -42,10 +41,10 @@ const startServer = db => {
       .catch(err => handleErrors({ res, err }));
   });
 
-  app.post("/articles", ({ body }, res) => {
-    if (!body.title || !body.markdown) return res.status(400).send();
+  app.post("/articles", ({ body: { title, markdown } }, res) => {
+    if (!title || !markdown) return res.status(400).send();
     db.collection("articles")
-      .insertOne({ markdown: body.markdown, title: body.title })
+      .insertOne({ markdown, title })
       .then(result => result.ops[0])
       .then(data => {
         res.status(201).send(data);
