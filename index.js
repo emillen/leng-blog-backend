@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const mongo = require("mongodb").MongoClient;
 const ObjectID = require("mongodb").ObjectID;
 const { mongodb: mongoConfig, server: serverConfig } = require("./config.json");
@@ -14,6 +15,7 @@ const has24Chars = s => s && s.length === 24;
 const startServer = db => {
   const app = express();
   app.use(bodyParser.json());
+  app.use(cors());
 
   app.get("/articles/:id", ({ params: { id } }, res) => {
     if (!has24Chars(id)) return res.status(404).send();
@@ -72,7 +74,7 @@ const startServer = db => {
     const { title, markdown } = req.body;
 
     if (!id) return res.status(404).send();
-    if (!title && !markdown) return res.status(400).send();
+    if (!title || !markdown) return res.status(400).send();
 
     db.collection("articles")
       .updateOne({ _id: new ObjectID(id) }, { $set: { title, markdown } }, {})
