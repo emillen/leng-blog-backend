@@ -1,4 +1,5 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const mongo = require("mongodb").MongoClient;
@@ -24,7 +25,6 @@ const startServer = db => {
       .then(article => {
         if (!article) res.status(404).send();
         else res.status(200).send(article);
-
         return article;
       })
       .then(console.log)
@@ -85,6 +85,18 @@ const startServer = db => {
       })
       .then(console.log)
       .catch(err => handleErrors({ err, res }));
+  });
+
+  app.post("/auth", ({ body: { username, password } }, res) => {
+    db.collection("users")
+      .findOne({ username })
+      .then(user => (user ? bcrypt.compare(password, user.hash) : false))
+      .then(userAuthenticated => {
+        if (userAuthenticated) return; // TODO create token and send to client
+      })
+      .then(console.log)
+      .then(() => res.status(200).send())
+      .catch(err => console.error(err) && res.status(500).send);
   });
 
   app.listen(serverConfig.port, () =>
