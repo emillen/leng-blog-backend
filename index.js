@@ -2,6 +2,8 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const fs = require("fs").promises;
+const jwt = require("jsonwebtoken");
 const mongo = require("mongodb").MongoClient;
 const ObjectID = require("mongodb").ObjectID;
 const { mongodb: mongoConfig, server: serverConfig } = require("./config.json");
@@ -92,9 +94,25 @@ const startServer = db => {
       .findOne({ username })
       .then(user => (user ? bcrypt.compare(password, user.hash) : false))
       .then(userAuthenticated => {
-        if (userAuthenticated) return; // TODO create token and send to client
+        if (userAuthenticated) {
+          return fs.open(serverConfig.privateKeyPath, "r").then(filehandle =>
+            Promise.all([filehandle, filehandle.readFile()]).then(
+              ([filehandle, privateKey]) => {
+                return filehandle.close().then(_ =>
+                  jwt.sign({ username }, privateKey, {
+                    algorithm: "RS256"
+                  })
+                );
+              }
+            )
+          );
+        }
+        return null; // TODO create token and send to client
       })
-      .then(console.log)
+      .then(token => {
+        if (!token) res.status(403).send();
+        else res.status(200).send({ token });
+      })
       .then(() => res.status(200).send())
       .catch(err => console.error(err) && res.status(500).send);
   });
