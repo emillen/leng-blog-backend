@@ -27,6 +27,7 @@ const startServer = db => {
     bcrypt,
     fs,
     ObjectID,
+    jwt,
     privateKeyPath: serverConfig.privateKeyPath
   });
 
