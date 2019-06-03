@@ -8,11 +8,6 @@ const mongo = require("mongodb").MongoClient;
 const ObjectID = require("mongodb").ObjectID;
 const { mongodb: mongoConfig, server: serverConfig } = require("./config.json");
 
-const handleErrors = ({ res, err }) => {
-  console.error(err);
-  res.status(500).send();
-};
-
 const startServer = db => {
   const app = express();
   const {

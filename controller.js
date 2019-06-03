@@ -1,3 +1,7 @@
+const handleErrors = ({ res, err }) => {
+  console.error(err);
+  res.status(500).send();
+};
 const has24Chars = s => s && s.length === 24;
 
 const getArticle = ({ db, ObjectID }) => ({ params: { id } }, res) => {
