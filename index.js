@@ -8,31 +8,37 @@ const mongo = require("mongodb").MongoClient;
 const ObjectID = require("mongodb").ObjectID;
 const { mongodb: mongoConfig, server: serverConfig } = require("./config.json");
 
-const startServer = db => {
+const startServer = ([privateKey, publicKey, db]) => {
   const app = express();
   const {
     getArticle,
     getAllArticles,
     createArticle,
     deleteArticle,
-    updateArticle,
-    authenticate
+    updateArticle
   } = require("./controller").createController({
     db,
+    ObjectID
+  });
+  const { authenticate, authMiddleware } = require("./auth").createAuth({
     bcrypt,
-    fs,
-    ObjectID,
-    jwt,
-    privateKeyPath: serverConfig.privateKeyPath
+    db,
+    publicKey,
+    privateKey,
+    jwt
   });
 
-  // TODO replace all the callback functions in this file with the ones from controller module
   app.use(bodyParser.json());
   app.use(cors());
 
+  // public paths
   app.post("/auth", authenticate);
   app.get("/articles/:id", getArticle);
   app.get("/articles", getAllArticles);
+
+  app.use(authMiddleware);
+
+  // Protected paths
   app.post("/articles", createArticle);
   app.delete("/articles/:id", deleteArticle);
   app.put("/articles/:id", updateArticle);
@@ -48,8 +54,22 @@ const createMongoUri = ({ username, password, host, port }) => {
   }${host}:${port}`;
 };
 
-mongo
+const readFile = filePath =>
+  fs
+    .open(filePath, "r")
+    .then(filehandle =>
+      Promise.all([filehandle, filehandle.readFile()]).then(
+        ([filehandle, contents]) => filehandle.close().then(_ => contents)
+      )
+    );
+
+// Keeping keys in memory from now on
+const getPrivateKey = readFile(serverConfig.privateKeyPath);
+const gePublicKey = readFile(serverConfig.publicKeyPath);
+const getDb = mongo
   .connect(createMongoUri(mongoConfig), { useNewUrlParser: true })
-  .then(db => db.db(mongoConfig.dbName))
+  .then(connection => connection.db(mongoConfig.dbName));
+
+Promise.all([getPrivateKey, gePublicKey, getDb])
   .then(startServer)
   .catch(console.error);

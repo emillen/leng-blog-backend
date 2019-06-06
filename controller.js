@@ -73,52 +73,12 @@ const updateArticle = ({ db, ObjectID }) => (req, res) => {
     .catch(err => handleErrors({ err, res }));
 };
 
-const signTokenWithKeyFile = ({ privateKeyPath, username, fs, jwt }) =>
-  fs.open(privateKeyPath, "r").then(filehandle =>
-    Promise.all([filehandle, filehandle.readFile()]).then(
-      ([filehandle, privateKey]) =>
-        filehandle.close().then(_ =>
-          jwt.sign({ username }, privateKey, {
-            algorithm: "RS256"
-          })
-        )
-    )
-  );
-
-const authenticate = ({ db, privateKeyPath, bcrypt, jwt, fs }) => (
-  { body: { username, password } },
-  res
-) =>
-  db
-    .collection("users")
-    .findOne({ username })
-    .then(user => (user ? bcrypt.compare(password, user.hash) : false))
-    .then(userAuthenticated => {
-      if (userAuthenticated)
-        return signTokenWithKeyFile({ bcrypt, privateKeyPath, fs, jwt });
-      else return null;
-    })
-    .then(token => {
-      console.log(token);
-      if (!token) res.status(403).send();
-      else res.status(200).send({ token });
-    })
-    .catch(err => console.error(err) && res.status(500).send);
-
-const createController = ({
-  db,
-  fs,
-  bcrypt,
-  privateKeyPath,
-  ObjectID,
-  jwt
-}) => ({
+const createController = ({ db, ObjectID, jwt }) => ({
   getArticle: getArticle({ db, ObjectID }),
   getAllArticles: getAllArticles({ db }),
   createArticle: createArticle({ db }),
   deleteArticle: deleteArticle({ db, ObjectID }),
-  updateArticle: updateArticle({ db, ObjectID }),
-  authenticate: authenticate({ db, fs, bcrypt, privateKeyPath, jwt })
+  updateArticle: updateArticle({ db, ObjectID })
 });
 
 module.exports = { createController };
